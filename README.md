@@ -15,7 +15,7 @@
 
 ## 安装使用方法
 
-无需安装，下载 bin/ppttimer.zip 并解压，运行 ppttimer.exe 即可开始使用。
+无需安装，下载 [bin/ppttimer.zip](https://raw.github.com/old9/ppttimer/master/bin/ppttimer.zip) 并解压，运行 ppttimer.exe 即可开始使用。
 程序启动后会自动侦测 PPT 的放映窗口，一旦 PPT 开始放映，则会自动启动计时器。
 如果不是 PPT 放映，如 PDF 等其他演示方式，也可以通过快捷键手动启动。
 默认的快捷键设置为，开始放映 `F12`，停止放映 `Ctrl`+`F12`，退出程序 `Windows`+`ESC`。
@@ -67,7 +67,7 @@ quitKey=#ESC
 
 ## 编译方法
 * 至 [Autohotkey 主页](http://autohotkey.com) 下载 Autohotkey 并安装。
-* 使用安装后自带的编译打包工具 Compiler\Ahk2Exe.exe 编译 ahk 文件。
+* 使用安装后自带的编译打包工具 `Compiler\Ahk2Exe.exe` 编译 ahk 文件。
 
 ## TODO
 
