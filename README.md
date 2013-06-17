@@ -1,4 +1,5 @@
 # PPT 计时器
+![ppttimer](ppttimer.png)
 
 一个 Windows 下简易的 PowerPoint 计时器，基于 [Autohotkey](http://autohotkey.com)。主要功能：
 * PPT 开始播放时自动开始倒计时，结束放映时自动停止。
@@ -7,9 +8,13 @@
 
 代码基于 [Yet Another CountDown Script](http://www.autohotkey.com/board/topic/19679-yet-another-countdown-script/) 修改，并参考了 [Countdown timer app](http://www.autohotkey.com/board/topic/57463-countdown-timer-app/)。
 
+屏幕截图：
+
+![Screenshot](screenshot.png)
+
 ## 安装使用方法
 
-无需安装，下载运行 .exe 文件即可开始使用。
+无需安装，下载 bin/ppttimer.zip 并解压，运行 ppttimer.exe 即可开始使用。
 程序启动后会自动侦测 PPT 的放映窗口，一旦 PPT 开始放映，则会自动启动计时器。
 如果不是 PPT 放映，如 PDF 等其他演示方式，也可以通过快捷键手动启动。默认的快捷键设置为，开始放映 `F12`，停止放映 `Ctrl`+`F12`，退出程序的快捷键是 `Windows`+`ESC`。
 
