@@ -1,5 +1,6 @@
 # PPT 计时器
 ![ppttimer](ppttimer.png)
+[下载](https://github.com/old9/ppttimer/releases)
 
 一个 Windows 下简易的 PowerPoint 计时器，基于 [Autohotkey](http://autohotkey.com)。主要功能：
 * PPT 开始播放时自动开始倒计时，结束放映时自动停止。
@@ -15,7 +16,7 @@
 
 ## 安装使用方法
 
-无需安装，下载 [bin/ppttimer.zip](https://raw.github.com/old9/ppttimer/master/bin/ppttimer.zip) 并解压，运行 ppttimer.exe 即可开始使用。
+无需安装，[下载](https://raw.github.com/old9/ppttimer/master/bin/ppttimer.zip)并解压，运行 ppttimer.exe 即可开始使用。
 程序启动后会自动侦测 PPT 的放映窗口，一旦 PPT 开始放映，则会自动启动计时器。
 如果不是 PPT 放映，如 PDF 等其他演示方式，也可以通过快捷键手动启动。
 默认的快捷键设置为，开始放映 `F12`，停止放映 `Ctrl`+`F12`，退出程序 `Windows`+`ESC`。
@@ -29,10 +30,13 @@ Duration=1200
 
 ;提前提醒时间，单位秒。默认为 120 秒即 2 分钟。
 Ahead=120
+;提前提醒时是否播放声音及声音路径
+PlayWarningSound=1
+WarningSoundFile=.\beep.mp3
 
 ;时间到时是否播放声音及声音路径
-PlaySound=1
-SoundFile=.\applause.mp3
+PlayFinishSound=1
+FinishSoundFile=.\applause.mp3
 
 ;窗口样式
 ;透明度
@@ -66,7 +70,7 @@ quitKey=#ESC
 ```
 
 ## 编译方法
-* 至 [Autohotkey 主页](http://autohotkey.com) 下载 Autohotkey 并安装。
+* 至 [Autohotkey 主页](https://autohotkey.com) 下载 Autohotkey 并安装。
 * 使用安装后自带的编译打包工具 `Compiler\Ahk2Exe.exe` 编译 ahk 文件。
 
 ## TODO
