@@ -8,7 +8,7 @@ iniread, stopKey, %pt_IniFile%, shortcuts, stopKey, ^F12
 iniread, quitKey, %pt_IniFile%, shortcuts, quitKey, #ESC
 
 iniread, opacity, %pt_IniFile%, main, opacity, 180
-iniread, fontface, %pt_IniFile%, main, fontface, 寰蒋闆呴粦
+iniread, fontface, %pt_IniFile%, main, fontface, "Microsoft Yahei"
 iniread, fontweight, %pt_IniFile%, main, fontweight, bold
 iniread, fontsize, %pt_IniFile%, main, fontsize, 40
 
