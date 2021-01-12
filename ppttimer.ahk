@@ -26,7 +26,8 @@ hotkey, %stopKey%, stopIt
 hotkey, %quitKey%, quitIt
 
 resetTimer()
-
+Gui, -dpiscale
+Gui, +AlwaysOnTop
 Gui, Font, %fontweight% s%fontsize% c%textColor% textcenter, %fontface%
 Gui, Font, c%textColor%
 Gui, Color, %backgroundColor%
