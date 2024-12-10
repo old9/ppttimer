@@ -49,29 +49,19 @@ Return
 
 
 ;;; if winexsist powerpoint presetation, auto start
-startTimer(){
-  global pt_Duration
-  global pt_DurationText
-  global CountDownTimer
+startTimer() {
+  global pt_Duration, pt_DurationText
   SetTimer CountDownTimer, Off
   GuiControl,, pt_DurationText, % FormatSeconds(pt_Duration)
   SetTimer CountDownTimer, 1000
   SetTimer CountDownTimer, on
 }
 
-resetTimer(){
-  global pt_Duration
-  global pt_PlayFinishSound
-  global pt_FinishSoundFile
-  global pt_PlayWarningSound
-  global pt_WarningSoundFile
-  global pt_Ahead
-  global pt_IniFile
-  global textColor
-  global backgroundColor
+resetTimer() {
+  global pt_Duration, pt_PlayFinishSound, pt_FinishSoundFile, pt_WarningSoundFile, pt_IniFile, textColor, backgroundColor
 
   Gui, Font, c%textColor%
-  gui, color, %backgroundColor%
+  Gui, Color, %backgroundColor%
 
   GuiControl, font, pt_DurationText
   IniRead, pt_Duration, %pt_IniFile%, Main, Duration, % 5*60
@@ -84,13 +74,11 @@ resetTimer(){
   GuiControl,, pt_DurationText, % FormatSeconds(pt_Duration)
 }
 
-
 ;restart or start manually
 startIt:
 resetTimer()
 startTimer()
 return
-
 
 stopIt:
 resetTimer()
@@ -98,18 +86,19 @@ SetTimer CountDownTimer, off
 return
 
 quitIt:
+IniWrite, %lastMonitor%, %pt_IniFile%, main, lastMonitor
 ExitApp
 return
 
 checkPowerpoint:
 IfWinExist, ahk_class screenClass
+{
+  if !isPptTimerOn
   {
-    if !isPptTimerOn
-    {
-      isPptTimerOn := true
-      resetTimer()
-      startTimer()
-    }
+    isPptTimerOn := true
+    resetTimer()
+    startTimer()
+  }
 }
 else
 {
@@ -121,51 +110,6 @@ else
   }
 }
 return
-
-
-/*
-windIDd := WinExist("My Window")
-isFullScreen := isWindowFullScreen(windIDd)
-MsgBox %isFullScreen%
-Return
-
-
-isWindowFullScreen(WinID)
-{
-    ;checks if the specified window is full screen
-    ;use WinExist of another means to get the Unique ID (HWND) of the desired window
-
-    if ( !WinID )
-        return
-
-    WinGet, style, Style, ahk_id %WinID%
-    ; 0x800000 is WS_BORDER.
-    ; 0x20000000 is WS_MINIMIZE.
-    ; no border and not minimized
-    retVal := (style & 0x20800000) ? 0 : 1
-    Return, retVal
-}
-*/
-/*
-checkPdf:
-IfWinExist, ahk_class AcrobatSDIWindow
-{
-
-    WinGet, style, Style, A
-    ; 0x800000 is WS_BORDER.
-    ; 0x20000000 is WS_MINIMIZE.
-    ; no border and not minimized
-    retVal := (style & 0x20800000) ? 0 : 1
-}
-else
-{
-}
-return
-
- */
-
-
-
 
 CountDownTimer:
   Gui +AlwaysOnTop
@@ -184,6 +128,7 @@ CountDownTimer:
       gui, color, %timeoutColor%
     }
     GuiControl,, pt_DurationText, % FormatSeconds(pt_Duration)
+
   }
   else if (pt_Duration <= pt_Ahead)
   {
@@ -204,12 +149,12 @@ CountDownTimer:
       Gosub PlayFinishSound
   }
   SetTimer CountDownTimer, 1000
-Return
+return
 
 PlayFinishSound:
   IfExist %pt_FinishSoundFile%
     SoundPlay %pt_FinishSoundFile%
-Return
+return
 
 PlayWarningSound:
   IfExist %pt_WarningSoundFile%
@@ -223,10 +168,9 @@ FormatSeconds(NumberOfSeconds)  ; Convert the specified number of seconds to hh:
     NumberOfSeconds := -NumberOfSeconds
   time += %NumberOfSeconds%, seconds
   FormatTime, mmss, %time%, mm:ss
-  ;return NumberOfSeconds//3600 ":" mmss  ; This method is used to support more than 24 hours worth of sections.
-  return mmss  ; This method is used to support more than 24 hours worth of sections.
+  return mmss
 }
 
 GuiClose:
-  ExitApp
-Return
+ExitApp
+return
