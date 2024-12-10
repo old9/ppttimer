@@ -3,9 +3,11 @@
 
 pt_IniFile := A_ScriptDir "\ppttimer.ini"
 
+; Read settings from the INI file
 iniread, startKey, %pt_IniFile%, shortcuts, startKey, F12
 iniread, stopKey, %pt_IniFile%, shortcuts, stopKey, ^F12
 iniread, quitKey, %pt_IniFile%, shortcuts, quitKey, #ESC
+iniread, moveKey, %pt_IniFile%, shortcuts, moveKey, ^#M
 
 iniread, opacity, %pt_IniFile%, main, opacity, 180
 iniread, fontface, %pt_IniFile%, main, fontface, "Microsoft Yahei"
@@ -19,11 +21,13 @@ iniread, backgroundColor, %pt_IniFile%, main, backgroundColor, FFFFAA
 
 iniread, bannerWidth, %pt_IniFile%, main, width, 300
 iniread, bannerHeight, %pt_IniFile%, main, height, 70
+iniread, lastMonitor, %pt_IniFile%, main, lastMonitor, 1
 
-
+; Hotkeys
 hotkey, %startKey%, startIt
 hotkey, %stopKey%, stopIt
 hotkey, %quitKey%, quitIt
+hotkey, %moveKey%, moveToNextMonitor
 
 resetTimer()
 Gui, -dpiscale
@@ -35,16 +39,39 @@ Gui Add, Text, x0 y0 h%bannerHeight% w%bannerWidth% vpt_DurationText
 guicontrol, +0x200 +center, pt_DurationText
 GuiControl,, pt_DurationText, % FormatSeconds(pt_Duration)
 GuiControl, Font, pt_DurationText
-xposition := A_ScreenWidth - bannerWidth
+
 Gui +LastFound +ToolWindow +AlwaysOnTop -Caption
-Gui Show, y0 h%bannerHeight% w%bannerWidth% x%xposition% , CountDown
-winset,transparent, %opacity%, CountDown
+; Set initial position based on last monitor
+MonitorSetup(lastMonitor)
+winset, transparent, %opacity%, CountDown
 Winset, ExStyle, +0x20, CountDown
 pt_Gui := WinExist()  ; Remember Gui window ID
 isPptTimerOn := false
-;isTimerOn := false
 SetTimer, checkPowerpoint, 250
 Return
+
+; Move Countdown to Next Monitor
+moveToNextMonitor:
+  SysGet, MonitorCount, MonitorCount
+  lastMonitor++
+  if (lastMonitor > MonitorCount)
+    lastMonitor := 1
+  MonitorSetup(lastMonitor)
+return
+
+
+MonitorSetup(monitorIndex) {
+  global bannerWidth, bannerHeight
+  ; Retrieve monitor dimensions using SysGet
+  SysGet, MonitorName, MonitorName, %monitorIndex%
+  SysGet, Monitor, Monitor, %monitorIndex%
+  SysGet, MonitorWorkArea, MonitorWorkArea, %monitorIndex%
+
+  MonitorWidth := MonitorRight - MonitorLeft
+  ; Calculate the new position
+  xposition := MonitorLeft + (MonitorWidth - bannerWidth) ; Centered horizontally
+  Gui Show, x%xposition% y%monitorTop% w%bannerWidth% h%bannerHeight%, CountDown
+}
 
 
 
@@ -58,7 +85,7 @@ startTimer() {
 }
 
 resetTimer() {
-  global pt_Duration, pt_PlayFinishSound, pt_FinishSoundFile, pt_WarningSoundFile, pt_IniFile, textColor, backgroundColor
+  global pt_Duration, pt_PlayFinishSound, pt_FinishSoundFile, pt_PlayWarningSound, pt_WarningSoundFile, pt_Ahead, pt_IniFile, textColor, backgroundColor
 
   Gui, Font, c%textColor%
   Gui, Color, %backgroundColor%
@@ -70,7 +97,6 @@ resetTimer() {
   IniRead, pt_PlayWarningSound, %pt_IniFile%, Main, PlayWarningSound, %True%
   IniRead, pt_WarningSoundFile, %pt_IniFile%, Main, WarningSoundFile, %A_ScriptDir%\
   IniRead, pt_Ahead, %pt_IniFile%, Main, Ahead, 120
-  ;msgbox, % pt_Duration " " pt_Ahead
   GuiControl,, pt_DurationText, % FormatSeconds(pt_Duration)
 }
 
@@ -128,7 +154,6 @@ CountDownTimer:
       gui, color, %timeoutColor%
     }
     GuiControl,, pt_DurationText, % FormatSeconds(pt_Duration)
-
   }
   else if (pt_Duration <= pt_Ahead)
   {
@@ -140,7 +165,7 @@ CountDownTimer:
   else
   {
     Gui, Font, c%textColor%
-  GuiControl,, pt_DurationText, % FormatSeconds(pt_Duration)
+    GuiControl,, pt_DurationText, % FormatSeconds(pt_Duration)
   }
   GuiControl, font, pt_DurationText
   if pt_Duration = 0
@@ -149,7 +174,7 @@ CountDownTimer:
       Gosub PlayFinishSound
   }
   SetTimer CountDownTimer, 1000
-return
+Return
 
 PlayFinishSound:
   IfExist %pt_FinishSoundFile%
@@ -172,5 +197,6 @@ FormatSeconds(NumberOfSeconds)  ; Convert the specified number of seconds to hh:
 }
 
 GuiClose:
+IniWrite, %lastMonitor%, %pt_IniFile%, main, lastMonitor
 ExitApp
 return
