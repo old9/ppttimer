@@ -47,7 +47,7 @@ winset, transparent, %opacity%, CountDown
 Winset, ExStyle, +0x20, CountDown
 pt_Gui := WinExist()  ; Remember Gui window ID
 isPptTimerOn := false
-SetTimer, checkPowerpoint, 250
+SetTimer, checkFullscreenWindow, 250
 Return
 
 ; Move Countdown to Next Monitor
@@ -116,26 +116,74 @@ IniWrite, %lastMonitor%, %pt_IniFile%, main, lastMonitor
 ExitApp
 return
 
-checkPowerpoint:
-IfWinExist, ahk_class screenClass
-{
-  if !isPptTimerOn
-  {
+checkFullscreenWindow:
+if (isAnyFullscreenWindow()) {
+  if !isPptTimerOn {
     isPptTimerOn := true
     resetTimer()
     startTimer()
   }
-}
-else
-{
-  if isPptTimerOn
-  {
+} else {
+  if isPptTimerOn {
     isPptTimerOn := false
     resetTimer()
     SetTimer CountDownTimer, off
   }
 }
 return
+
+
+isAnyFullscreenWindow() {
+  ; Get the number of monitors
+  SysGet, MonitorCount, MonitorCount
+
+  ; Get the list of all windows
+  WinGet, winList, List
+  Loop, %winList%
+  {
+    winID := winList%A_Index%
+    ; Get window style and position
+    WinGet, winStyle, Style, ahk_id %winID%
+    WinGetPos, winX, winY, winWidth, winHeight, ahk_id %winID%
+
+    ; Check if the window is visible
+    WinGet, winState, MinMax, ahk_id %winID%
+    if (winState = -1) ; Skip invisible windows
+      continue
+    WinGetTitle, winTitle, ahk_id %winID%
+    WinGetClass, winClass, ahk_id %winID%
+    if (winClass = "Progman" || winClass = "WorkerW") ; Exclude desktop and similar windows
+      continue
+    if (winTitle = "") ; Exclude windows with no title (often background/system windows)
+      continue
+
+    ; Loop through all monitors to check for fullscreen
+    Loop, %MonitorCount%
+    {
+      monitorIndex := A_Index
+      ; Get monitor dimensions
+      SysGet, Monitor, Monitor, %monitorIndex%
+
+      MonitorWidth := MonitorRight - MonitorLeft
+      MonitorHeight := MonitorBottom - MonitorTop
+
+      ; Check if the window matches the monitor's dimensions and is borderless
+      isFullscreen := ((winStyle & 0x20800000) = 0) ; No border, not minimized
+      isFullscreen := isFullscreen && (winX = monitorLeft && winY = monitorTop) ; Top-left corner of the monitor
+      isFullscreen := isFullscreen && (winWidth = monitorWidth && winHeight = monitorHeight) ; Covers the monitor
+
+      if (isFullscreen) {
+        return true ; A fullscreen window is found
+      }
+    }
+  }
+  return false ; No fullscreen window found
+}
+
+
+
+
+
 
 CountDownTimer:
   Gui +AlwaysOnTop
