@@ -4,7 +4,7 @@
 [下载](https://github.com/old9/ppttimer/releases)
 
 一个 Windows 下简易的 PowerPoint 计时器，基于 [Autohotkey](http://autohotkey.com)。主要功能：
-* PPT 开始播放时自动开始倒计时，结束放映时自动停止。
+* PPT 或任何全屏程序开始播放时，自动开始倒计时，结束放映或退出全屏时自动停止。
 * 悬浮于最上层，鼠标可穿透，不影响其他操作。
 * 字体和透明等可通过参数调节。
 * 可手动开始停止计时器。
@@ -79,7 +79,6 @@ quitKey=#ESC
 ## TODO
 
 * 更多可控制的参数
-* 除 PPT 之外的其他窗口的自动侦测
 
 ## licence
 
