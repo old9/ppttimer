@@ -229,11 +229,13 @@ Return
 FormatSeconds(NumberOfSeconds)  ; Convert the specified number of seconds to hh:mm:ss format.
 {
   time = 19990101  ; *Midnight* of an arbitrary date.
-  if NumberOfSeconds < 0
+  if (NumberOfSeconds < 0){
+    revert := "+"
     NumberOfSeconds := -NumberOfSeconds
+  }
   time += %NumberOfSeconds%, seconds
   FormatTime, mmss, %time%, mm:ss
-  return mmss
+  return revert mmss
 }
 
 GuiClose:
