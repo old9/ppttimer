@@ -23,8 +23,10 @@ iniread, bannerWidth, %pt_IniFile%, main, width, 300
 iniread, bannerHeight, %pt_IniFile%, main, height, 70
 iniread, lastMonitor, %pt_IniFile%, main, lastMonitor, 1
 
+iniread, manualModeSupressDetection, %pt_IniFile%, main, manualModeSupressDetection, 1
+
 ; Hotkeys
-hotkey, %startKey%, startIt
+hotkey, %startKey%, manuallyStart
 hotkey, %stopKey%, stopIt
 hotkey, %quitKey%, quitIt
 hotkey, %moveKey%, moveToNextMonitor
@@ -47,6 +49,7 @@ winset, transparent, %opacity%, CountDown
 Winset, ExStyle, +0x20, CountDown
 pt_Gui := WinExist()  ; Remember Gui window ID
 isPptTimerOn := false
+manualMode := false
 SetTimer, checkFullscreenWindow, 250
 Return
 
@@ -85,7 +88,7 @@ startTimer() {
 }
 
 resetTimer() {
-  global pt_Duration, pt_PlayFinishSound, pt_FinishSoundFile, pt_PlayWarningSound, pt_WarningSoundFile, pt_Ahead, pt_IniFile, textColor, backgroundColor
+  global pt_Duration, pt_PlayFinishSound, pt_FinishSoundFile, pt_PlayWarningSound, pt_WarningSoundFile, pt_Ahead, pt_IniFile, textColor, backgroundColor, manualMode
 
   Gui, Font, c%textColor%
   Gui, Color, %backgroundColor%
@@ -100,7 +103,13 @@ resetTimer() {
   GuiControl,, pt_DurationText, % FormatSeconds(pt_Duration)
 }
 
-;restart or start manually
+;start manually
+manuallyStart:
+manualMode := true
+Gosub startIt
+return
+
+;restart
 startIt:
 resetTimer()
 startTimer()
@@ -108,6 +117,7 @@ return
 
 stopIt:
 resetTimer()
+manualMode := false
 SetTimer CountDownTimer, off
 return
 
@@ -117,17 +127,19 @@ ExitApp
 return
 
 checkFullscreenWindow:
-if (isAnyFullscreenWindow()) {
-  if !isPptTimerOn {
-    isPptTimerOn := true
-    resetTimer()
-    startTimer()
-  }
-} else {
-  if isPptTimerOn {
-    isPptTimerOn := false
-    resetTimer()
-    SetTimer CountDownTimer, off
+if (!manualMode || !manualModeSupressDetection) {
+  if (isAnyFullscreenWindow()) {
+    if !isPptTimerOn {
+      isPptTimerOn := true
+      resetTimer()
+      startTimer()
+    }
+  } else {
+    if isPptTimerOn {
+      isPptTimerOn := false
+      resetTimer()
+      SetTimer CountDownTimer, off
+    }
   }
 }
 return
