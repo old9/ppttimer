@@ -75,12 +75,12 @@ MonitorSetup(monitorIndex) {
 
 
 
-;;; if winexsist powerpoint presetation, auto start
 startTimer() {
-  global pt_Duration, pt_DurationText
+  global pt_Duration, pt_DurationText, startTime
   SetTimer CountDownTimer, Off
+  startTime := A_TickCount
   GuiControl,, pt_DurationText, % FormatSeconds(pt_Duration)
-  SetTimer CountDownTimer, 1000
+  SetTimer CountDownTimer, 250
   SetTimer CountDownTimer, on
 }
 
@@ -180,49 +180,41 @@ isAnyFullscreenWindow() {
   return false ; No fullscreen window found
 }
 
-
-
-
-
-
-CountDownTimer:
-  Gui +AlwaysOnTop
-  pt_Duration--
-  if pt_Duration < 0
-  {
+updateCountDownText(){
+  global pt_PlayFinishSound, pt_PlayWarningSound, remaining, timeoutColor, backgroundColor, AheadColor, textColor, pt_Ahead, blink
+  if (remaining < 0){
     blink := !blink
-    if blink
-    {
+    if (blink) {
       Gui, Font, c%timeoutColor%
       gui, color, %backgroundColor%
-    }
-    else
-    {
+    } else {
       Gui, Font, c%backgroundColor%
       gui, color, %timeoutColor%
     }
-    GuiControl,, pt_DurationText, % FormatSeconds(pt_Duration)
-  }
-  else if (pt_Duration <= pt_Ahead)
-  {
-    if (pt_Duration = pt_Ahead) && pt_PlayWarningSound
+  } else if (remaining <= pt_Ahead) {
+    if (remaining = pt_Ahead && pt_PlayWarningSound){
       Gosub PlayWarningSound
+    }
     Gui, Font, c%AheadColor%
-    GuiControl,, pt_DurationText, % FormatSeconds(pt_Duration)
-  }
-  else
-  {
+  } else {
     Gui, Font, c%textColor%
-    GuiControl,, pt_DurationText, % FormatSeconds(pt_Duration)
   }
-  GuiControl, font, pt_DurationText
-  if pt_Duration = 0
-  {
-    if pt_PlayFinishSound
-      Gosub PlayFinishSound
+  GuiControl,, pt_DurationText, % FormatSeconds(remaining)
+  GuiControl, Font, pt_DurationText
+  if (remaining = 0 && pt_PlayFinishSound){
+    Gosub PlayFinishSound
   }
-  SetTimer CountDownTimer, 1000
-Return
+}
+
+CountDownTimer(){
+  global pt_Duration, startTime, remaining
+
+  elapsed := (A_TickCount - startTime) // 1000
+  if (remaining != pt_Duration - elapsed) {
+    remaining := pt_Duration - elapsed
+    updateCountDownText()
+  }
+}
 
 PlayFinishSound:
   IfExist %pt_FinishSoundFile%
