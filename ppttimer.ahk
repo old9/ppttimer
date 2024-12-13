@@ -31,6 +31,9 @@ hotkey, %stopKey%, stopIt
 hotkey, %quitKey%, quitIt
 hotkey, %moveKey%, moveToNextMonitor
 
+DPI_F := A_ScreenDPI / 96
+fontsize := fontsize / DPI_F
+
 resetTimer()
 Gui, -dpiscale
 Gui, +AlwaysOnTop
@@ -62,9 +65,12 @@ moveToNextMonitor:
   MonitorSetup(lastMonitor)
 return
 
-
 MonitorSetup(monitorIndex) {
   global bannerWidth, bannerHeight
+  SysGet, MonitorCount, MonitorCount
+  if (monitorIndex > MonitorCount || MonitorCount < 1) {
+    monitorIndex := 1
+  }
   ; Retrieve monitor dimensions using SysGet
   SysGet, MonitorName, MonitorName, %monitorIndex%
   SysGet, Monitor, Monitor, %monitorIndex%
@@ -72,7 +78,7 @@ MonitorSetup(monitorIndex) {
 
   MonitorWidth := MonitorRight - MonitorLeft
   ; Calculate the new position
-  xposition := MonitorLeft + (MonitorWidth - bannerWidth) ; Centered horizontally
+  xposition := MonitorLeft + (MonitorWidth - bannerWidth)
   Gui Show, x%xposition% y%monitorTop% w%bannerWidth% h%bannerHeight%, CountDown
 }
 
@@ -164,7 +170,7 @@ isAnyFullscreenWindow() {
       continue
     WinGetTitle, winTitle, ahk_id %winID%
     WinGetClass, winClass, ahk_id %winID%
-    if (winClass = "Progman" || winClass = "WorkerW") ; Exclude desktop and similar windows
+    if (winClass = "Progman" || winClass = "WorkerW" || winClass = "TscShellContainerClass") ; Exclude desktop and similar windows
       continue
     if (winTitle = "") ; Exclude windows with no title (often background/system windows)
       continue
