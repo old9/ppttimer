@@ -1,117 +1,47 @@
+#Persistent
 #SingleInstance force
-#NoTrayIcon
 
-pt_IniFile := A_ScriptDir "\ppttimer.ini"
+DllCall("SetThreadDpiAwarenessContext", "ptr", -4, "ptr")
 
-; Read settings from the INI file
-iniread, startKey, %pt_IniFile%, shortcuts, startKey, F12
-iniread, stopKey, %pt_IniFile%, shortcuts, stopKey, ^F12
-iniread, quitKey, %pt_IniFile%, shortcuts, quitKey, #ESC
-iniread, moveKey, %pt_IniFile%, shortcuts, moveKey, ^#M
+global pt_IniFile := A_ScriptDir "\ppttimer.ini"
+global lastProfile, profiles := [], MonitorCount, lastMonitor, manualModeSupressDetection, showOnAllMonitors, isPptTimerOn
+global startKey, stopKey, quitKey, moveKey
+global opacity, fontface, fontweight, fontsize, textColor, AheadColor, timeoutColor, backgroundColor, bannerWidth, bannerHeight, pt_Duration, pt_PlayFinishSound, pt_FinishSoundFile, pt_PlayWarningSound, pt_WarningSoundFile, pt_Ahead
 
-iniread, opacity, %pt_IniFile%, main, opacity, 180
-iniread, fontface, %pt_IniFile%, main, fontface, "Microsoft Yahei"
-iniread, fontweight, %pt_IniFile%, main, fontweight, bold
-iniread, fontsize, %pt_IniFile%, main, fontsize, 40
+loadSettings()
 
-iniread, textColor, %pt_IniFile%, main, textcolor, 000000
-iniread, AheadColor, %pt_IniFile%, main, aheadColor, 9D1000
-iniread, timeoutColor, %pt_IniFile%, main, timeoutColor, FF0000
-iniread, backgroundColor, %pt_IniFile%, main, backgroundColor, FFFFAA
+Gui, -DPIScale +AlwaysOnTop +LastFound +ToolWindow -Caption
+Gui Add, Text, x0 y0 h%bannerHeight% w%bannerWidth% vpt_DurationText
+GuiControl, +0x200 +center, pt_DurationText, % FormatSeconds(pt_Duration)
+Winset, ExStyle, +0x20
+global pt_Gui := WinExist()
 
-iniread, bannerWidth, %pt_IniFile%, main, width, 300
-iniread, bannerHeight, %pt_IniFile%, main, height, 70
-iniread, lastMonitor, %pt_IniFile%, main, lastMonitor, 1
+refreshUI()
 
-iniread, manualModeSupressDetection, %pt_IniFile%, main, manualModeSupressDetection, 1
 
-; Hotkeys
-hotkey, %startKey%, manuallyStart
-hotkey, %stopKey%, stopIt
-hotkey, %quitKey%, quitIt
-hotkey, %moveKey%, moveToNextMonitor
 
-DPI_F := A_ScreenDPI / 96
-fontsize := fontsize / DPI_F
+
+isPptTimerOn := false
 
 resetTimer()
-Gui, -dpiscale
-Gui, +AlwaysOnTop
-Gui, Font, %fontweight% s%fontsize% c%textColor% textcenter, %fontface%
-Gui, Font, c%textColor%
-Gui, Color, %backgroundColor%
-Gui Add, Text, x0 y0 h%bannerHeight% w%bannerWidth% vpt_DurationText
-guicontrol, +0x200 +center, pt_DurationText
-GuiControl,, pt_DurationText, % FormatSeconds(pt_Duration)
-GuiControl, Font, pt_DurationText
+creatMenus()
 
-Gui +LastFound +ToolWindow +AlwaysOnTop -Caption
-; Set initial position based on last monitor
-MonitorSetup(lastMonitor)
-winset, transparent, %opacity%, CountDown
-Winset, ExStyle, +0x20, CountDown
-pt_Gui := WinExist()  ; Remember Gui window ID
-isPptTimerOn := false
-manualMode := false
 SetTimer, checkFullscreenWindow, 250
-Return
 
-; Move Countdown to Next Monitor
-moveToNextMonitor:
-  SysGet, MonitorCount, MonitorCount
-  lastMonitor++
-  if (lastMonitor > MonitorCount)
-    lastMonitor := 1
-  MonitorSetup(lastMonitor)
 return
 
-MonitorSetup(monitorIndex) {
-  global bannerWidth, bannerHeight
-  SysGet, MonitorCount, MonitorCount
-  if (monitorIndex > MonitorCount || MonitorCount < 1) {
-    monitorIndex := 1
-  }
-  ; Retrieve monitor dimensions using SysGet
-  SysGet, MonitorName, MonitorName, %monitorIndex%
-  SysGet, Monitor, Monitor, %monitorIndex%
-  SysGet, MonitorWorkArea, MonitorWorkArea, %monitorIndex%
-
-  MonitorWidth := MonitorRight - MonitorLeft
-  ; Calculate the new position
-  xposition := MonitorLeft + (MonitorWidth - bannerWidth)
-  Gui Show, x%xposition% y%monitorTop% w%bannerWidth% h%bannerHeight%, CountDown
-}
 
 
 
-startTimer() {
-  global pt_Duration, pt_DurationText, startTime
-  SetTimer CountDownTimer, Off
-  startTime := A_TickCount
-  GuiControl,, pt_DurationText, % FormatSeconds(pt_Duration)
-  SetTimer CountDownTimer, 250
-  SetTimer CountDownTimer, on
-}
 
-resetTimer() {
-  global pt_Duration, pt_PlayFinishSound, pt_FinishSoundFile, pt_PlayWarningSound, pt_WarningSoundFile, pt_Ahead, pt_IniFile, textColor, backgroundColor, manualMode
 
-  Gui, Font, c%textColor%
-  Gui, Color, %backgroundColor%
-
-  GuiControl, font, pt_DurationText
-  IniRead, pt_Duration, %pt_IniFile%, Main, Duration, % 5*60
-  IniRead, pt_PlayFinishSound, %pt_IniFile%, Main, PlayFinishSound, %True%
-  IniRead, pt_FinishSoundFile, %pt_IniFile%, Main, FinishSoundFile, %A_ScriptDir%\
-  IniRead, pt_PlayWarningSound, %pt_IniFile%, Main, PlayWarningSound, %True%
-  IniRead, pt_WarningSoundFile, %pt_IniFile%, Main, WarningSoundFile, %A_ScriptDir%\
-  IniRead, pt_Ahead, %pt_IniFile%, Main, Ahead, 120
-  GuiControl,, pt_DurationText, % FormatSeconds(pt_Duration)
-}
+;;;;;;;;;; SUBRUTINES ;;;;;;;;;;
 
 ;start manually
 manuallyStart:
-manualMode := true
+if (manualModeSupressDetection) {
+  SetTimer, checkFullscreenWindow, off
+}
 Gosub startIt
 return
 
@@ -123,32 +53,331 @@ return
 
 stopIt:
 resetTimer()
-manualMode := false
+SetTimer, checkFullscreenWindow, on
 SetTimer CountDownTimer, off
 return
 
 quitIt:
-IniWrite, %lastMonitor%, %pt_IniFile%, main, lastMonitor
+IniWrite, %lastMonitor%, %pt_IniFile%, status, lastMonitor
 ExitApp
 return
 
-checkFullscreenWindow:
-if (!manualMode || !manualModeSupressDetection) {
+
+; Add these hotkeys after the other hotkey definitions
+~Ctrl::
+WinSet, ExStyle, -0x20, ahk_id %pt_Gui%  ; Disable click-through when Ctrl is pressed
+return
+
+~Ctrl up::
+WinSet, ExStyle, +0x20, ahk_id %pt_Gui%  ; Re-enable click-through when Ctrl is released
+return
+
+; Modify the GuiContextMenu section to use the shared menu
+GuiContextMenu:
+  Menu, MainMenu, Show, %A_GuiX%, %A_GuiY%
+  WinSet, ExStyle, +0x20, ahk_id %pt_Gui%  ; Re-enable click-through when Ctrl is released
+return
+
+
+PlayFinishSound:
+  IfExist %pt_FinishSoundFile%
+    SoundPlay %pt_FinishSoundFile%
+return
+
+PlayWarningSound:
+  IfExist %pt_WarningSoundFile%
+    SoundPlay %pt_WarningSoundFile%
+Return
+
+
+GuiSize:
+GuiControl, Move, pt_DurationText, w%A_GuiWidth% h%A_GuiHeight%
+Return
+
+GuiClose:
+IniWrite, %lastMonitor%, %pt_IniFile%, status, lastMonitor
+ExitApp
+return
+
+
+
+
+
+
+
+
+
+
+
+;;;;;;;;;; FUNCTIONS ;;;;;;;;;;
+
+resetTimer() {
+  Gui, Font, c%textColor%
+  Gui, Color, %backgroundColor%
+  GuiControl, font, pt_DurationText
+  GuiControl,, pt_DurationText, % FormatSeconds(pt_Duration)
+}
+
+
+startTimer() {
+  global pt_DurationText, startTime
+  SetTimer CountDownTimer, Off
+  startTime := A_TickCount
+  GuiControl,, pt_DurationText, % FormatSeconds(pt_Duration)
+  SetTimer CountDownTimer, 250
+  SetTimer CountDownTimer, on
+}
+
+
+CountDownTimer(){
+  global startTime, remaining
+  elapsed := (A_TickCount - startTime) // 1000
+  if (remaining != pt_Duration - elapsed) {
+    remaining := pt_Duration - elapsed
+    updateCountDownText()
+  }
+}
+
+updateCountDownText(){
+  global blink, remaining
+  if (remaining < 0){
+    blink := !blink
+    if (blink) {
+      Gui, Font, c%timeoutColor%
+      gui, color, %backgroundColor%
+    } else {
+      Gui, Font, c%backgroundColor%
+      gui, color, %timeoutColor%
+    }
+  } else if (remaining <= pt_Ahead) {
+    Gui, Font, c%AheadColor%
+  } else {
+    Gui, Font, c%textColor%
+  }
+  GuiControl,, pt_DurationText, % FormatSeconds(remaining)
+  GuiControl, Font, pt_DurationText
+
+  if (remaining = pt_Ahead && pt_PlayWarningSound){
+    Gosub PlayWarningSound
+  }
+  if (remaining = 0 && pt_PlayFinishSound){
+    Gosub PlayFinishSound
+  }
+}
+
+refreshUI() {
+  SysGet, MonitorCount, MonitorCount
+  if (lastMonitor > MonitorCount || monitorIndex < 1) {
+    lastMonitor := 1
+  }
+  SysGet, Monitor, Monitor, %lastMonitor%
+  MonitorWidth := MonitorRight - MonitorLeft
+  xposition := MonitorLeft + (MonitorWidth - bannerWidth)
+
+  Gui, Show, x%xposition% y%monitorTop% w%bannerWidth% h%bannerHeight%
+  Gui, Font, %fontweight% s%fontsize% c%textColor% textcenter, %fontface%
+  GuiControl, Font, pt_DurationText
+  if (!isPptTimerOn) {
+    GuiControl,, pt_DurationText, % FormatSeconds(pt_Duration)
+  }
+  Gui, Color, %backgroundColor%
+  Winset, transparent, %opacity%, ahk_id %pt_Gui%
+}
+
+; Move Countdown to Next Monitor
+moveToNextMonitor(){
+  SysGet, MonitorCount, MonitorCount
+  lastMonitor++
+  if (lastMonitor > MonitorCount)
+    lastMonitor := 1
+  refreshUI()
+}
+
+toggleShowOnAllMonitors() {
+  ; TODO
+  showOnAllMonitors := !showOnAllMonitors
+  Menu, %A_ThisMenu%, ToggleCheck, %A_ThisMenuItem%
+  nextMenuItem := A_ThisMenuItemPos + 1
+  if (showOnAllMonitors) {
+    Menu, %A_ThisMenu%, disable, %nextMenuItem%&
+  } else {
+    Menu, %A_ThisMenu%, enable, %nextMenuItem%&
+  }
+  IniWrite, %showOnAllMonitors%, %pt_IniFile%, status, showOnAllMonitors
+}
+
+loadSettings(){
+  InIRead, lastProfile, %pt_IniFile%, status, lastProfile, 0
+
+  loadProfile(lastProfile)
+
+  InIRead, startKey, %pt_IniFile%, shortcuts, startKey, F12
+  InIRead, stopKey, %pt_IniFile%, shortcuts, stopKey, ^F12
+  InIRead, quitKey, %pt_IniFile%, shortcuts, quitKey, #ESC
+  InIRead, moveKey, %pt_IniFile%, shortcuts, moveKey, ^#M
+
+
+  InIRead, lastMonitor, %pt_IniFile%, status, lastMonitor, 1
+  InIRead, manualModeSupressDetection, %pt_IniFile%, status, manualModeSupressDetection, 1
+  InIRead, showOnAllMonitors, %pt_IniFile%, status, showOnAllMonitors, 0
+
+  ; Hotkeys
+  hotkey, %startKey%, manuallyStart
+  hotkey, %stopKey%, stopIt
+  hotkey, %quitKey%, quitIt
+  hotkey, %moveKey%, moveToNextMonitor
+
+  InIRead, sectionNams, %pt_IniFile%
+  Loop, parse, sectionNams, `n, `r
+  {
+    found := RegExMatch(A_LoopField, "i)Profile_(?P<Idx>[1-9])$", Profile)
+    if (found > 0) {
+      profiles.push(ProfileIdx)
+    }
+  }
+
+  if (profiles.Length() = 0) {
+    lastProfile := 0
+    IniWrite, 0, %pt_IniFile%, status, lastProfile
+  }
+
+}
+
+creatMenus(){
+  Loop, 9 {
+    idx := A_Index - 1
+    loadProfile%idx% := Func("loadProfile").Bind(idx)
+  }
+  Menu, MainMenu, Add, % "开始计时`t" ReadableShortcut(startKey), manuallyStart
+  Menu, MainMenu, Add, % "停止计时`t" ReadableShortcut(stopKey), stopIt
+  Menu, MainMenu, Add
+  if (profiles.Length() > 0) {
+    Menu, ProfilesMenu, Add, % "默认配置`tCtrl+Win+F10",% loadProfile0, +Radio
+    For index, profileid in profiles {
+      InIRead, profilename, %pt_IniFile%, Profile_%profileid%, name, 预设 %profileid%
+      Menu, ProfilesMenu, Add, % "(&" profileid ") " profilename "`tCtrl+Win+F" profileid, % loadProfile%profileid%, +Radio
+      hotkey, ^#F%profileid%, % loadProfile%profileid%
+    }
+    if (lastProfile = 0) {
+      Menu, ProfilesMenu, Check, 1&
+    } else {
+      targetIndex := HasVal(profiles, lastProfile) + 1
+      Menu, ProfilesMenu, Check, %targetIndex%&
+    }
+    Menu, MainMenu, Add, 计时预设, :ProfilesMenu
+    Menu, MainMenu, Add
+  }
+  if (MonitorCount > 1) {
+    Menu, MonitorMenu, Add, % "在所有显示器显示", toggleShowOnAllMonitors
+    Menu, MonitorMenu, Add, % "移至下个显示器`t" ReadableShortcut(moveKey), moveToNextMonitor
+    if (showOnAllMonitors) {
+      Menu, MonitorMenu, check, % "在所有显示器显示"
+      Menu, MonitorMenu, disable, % "移至下个显示器`t" ReadableShortcut(moveKey)
+    }
+    Menu, MainMenu, Add, 多显示器, :MonitorMenu
+    Menu, MainMenu, Add
+  }
+
+  Menu, MainMenu, Add, % "退出`t" ReadableShortcut(quitKey), quitIt
+
+
+  Menu, Tray, NoStandard
+  Menu, Tray, Add, % "开始计时`t" ReadableShortcut(startKey), manuallyStart
+  Menu, Tray, Add, % "停止计时`t" ReadableShortcut(stopKey), stopIt
+  Menu, Tray, Add
+  if (profiles.Length() > 0) {
+    Menu, Tray, Add, 计时预设, :ProfilesMenu
+    Menu, Tray, Add
+  }
+  if (MonitorCount > 1) {
+    Menu, Tray, Add, 多显示器, :MonitorMenu
+    Menu, Tray, Add
+  }
+  Menu, Tray, Add, % "退出`t" ReadableShortcut(quitKey), quitIt
+
+}
+
+loadProfile(idx) {
+  local ProfileSectionName
+  loadDefaultProfile()
+  if (idx > 0) {
+    ProfileSectionName := "Profile_" idx
+    InIRead, fontface, %pt_IniFile%, %ProfileSectionName%, fontface, %fontface%
+    InIRead, fontweight, %pt_IniFile%, %ProfileSectionName%, fontweight, %fontweight%
+    InIRead, fontsize, %pt_IniFile%, %ProfileSectionName%, fontsize, %fontsize%
+    InIRead, textColor, %pt_IniFile%, %ProfileSectionName%, textcolor, %textColor%
+
+    InIRead, AheadColor, %pt_IniFile%, %ProfileSectionName%, aheadColor, %AheadColor%
+    InIRead, timeoutColor, %pt_IniFile%, %ProfileSectionName%, timeoutColor, %timeoutColor%
+
+    InIRead, opacity, %pt_IniFile%, %ProfileSectionName%, opacity, %opacity%
+    InIRead, backgroundColor, %pt_IniFile%, %ProfileSectionName%, backgroundColor, %backgroundColor%
+    InIRead, bannerWidth, %pt_IniFile%, %ProfileSectionName%, width, %bannerWidth%
+    InIRead, bannerHeight, %pt_IniFile%, %ProfileSectionName%, height, %bannerHeight%
+
+    InIRead, pt_Duration, %pt_IniFile%, %ProfileSectionName%, Duration, %pt_Duration%
+    InIRead, pt_Ahead, %pt_IniFile%, %ProfileSectionName%, Ahead, %pt_Ahead%
+
+    InIRead, pt_PlayWarningSound, %pt_IniFile%, %ProfileSectionName%, PlayWarningSound, %pt_PlayWarningSound%
+    InIRead, pt_WarningSoundFile, %pt_IniFile%, %ProfileSectionName%, WarningSoundFile, %pt_WarningSoundFile%
+
+    InIRead, pt_PlayFinishSound, %pt_IniFile%, %ProfileSectionName%, PlayFinishSound, %pt_PlayFinishSound%
+    InIRead, pt_FinishSoundFile, %pt_IniFile%, %ProfileSectionName%, FinishSoundFile, %pt_FinishSoundFile%
+  }
+
+  refreshUI()
+  if (idx != lastProfile) {
+    if (A_ThisMenu != "") {
+      currentMenuPos := HasVal(profiles, idx) + 1
+      lastProfileMenuPos := HasVal(profiles, lastProfile) + 1
+      Menu, ProfilesMenu, Check, %currentMenuPos%&
+      Menu, ProfilesMenu, Uncheck, %lastProfileMenuPos%&
+    }
+    lastProfile := idx
+    IniWrite, %idx%, %pt_IniFile%, status, lastProfile
+  }
+}
+
+loadDefaultProfile(){
+  InIRead, fontface, %pt_IniFile%, Main, fontface, "Microsoft Yahei"
+  InIRead, fontweight, %pt_IniFile%, Main, fontweight, bold
+  InIRead, fontsize, %pt_IniFile%, Main, fontsize, 28
+  InIRead, textColor, %pt_IniFile%, Main, textcolor, 000000
+
+  InIRead, AheadColor, %pt_IniFile%, Main, aheadColor, 9D1000
+  InIRead, timeoutColor, %pt_IniFile%, Main, timeoutColor, FF0000
+
+  InIRead, opacity, %pt_IniFile%, Main, opacity, 180
+  InIRead, backgroundColor, %pt_IniFile%, Main, backgroundColor, FFFFAA
+  InIRead, bannerWidth, %pt_IniFile%, Main, width, 250
+  InIRead, bannerHeight, %pt_IniFile%, Main, height, 80
+
+  InIRead, pt_Duration, %pt_IniFile%, Main, Duration, 300
+  InIRead, pt_Ahead, %pt_IniFile%, Main, Ahead, 120
+
+  InIRead, pt_PlayWarningSound, %pt_IniFile%, Main, PlayWarningSound, %True%
+  InIRead, pt_WarningSoundFile, %pt_IniFile%, Main, WarningSoundFile, %A_ScriptDir%\beep.mp3
+
+  InIRead, pt_PlayFinishSound, %pt_IniFile%, Main, PlayFinishSound, %True%
+  InIRead, pt_FinishSoundFile, %pt_IniFile%, Main, FinishSoundFile, %A_ScriptDir%\applause.mp3
+
+}
+
+checkFullscreenWindow(){
   if (isAnyFullscreenWindow()) {
-    if !isPptTimerOn {
+    if (!isPptTimerOn) {
       isPptTimerOn := true
       resetTimer()
       startTimer()
     }
   } else {
-    if isPptTimerOn {
+    if (isPptTimerOn) {
       isPptTimerOn := false
       resetTimer()
       SetTimer CountDownTimer, off
     }
   }
 }
-return
 
 
 isAnyFullscreenWindow() {
@@ -198,65 +427,49 @@ isAnyFullscreenWindow() {
   return false ; No fullscreen window found
 }
 
-updateCountDownText(){
-  global pt_PlayFinishSound, pt_PlayWarningSound, remaining, timeoutColor, backgroundColor, AheadColor, textColor, pt_Ahead, blink
-  if (remaining < 0){
-    blink := !blink
-    if (blink) {
-      Gui, Font, c%timeoutColor%
-      gui, color, %backgroundColor%
-    } else {
-      Gui, Font, c%backgroundColor%
-      gui, color, %timeoutColor%
-    }
-  } else if (remaining <= pt_Ahead) {
-    if (remaining = pt_Ahead && pt_PlayWarningSound){
-      Gosub PlayWarningSound
-    }
-    Gui, Font, c%AheadColor%
-  } else {
-    Gui, Font, c%textColor%
-  }
-  GuiControl,, pt_DurationText, % FormatSeconds(remaining)
-  GuiControl, Font, pt_DurationText
-  if (remaining = 0 && pt_PlayFinishSound){
-    Gosub PlayFinishSound
-  }
-}
-
-CountDownTimer(){
-  global pt_Duration, startTime, remaining
-
-  elapsed := (A_TickCount - startTime) // 1000
-  if (remaining != pt_Duration - elapsed) {
-    remaining := pt_Duration - elapsed
-    updateCountDownText()
-  }
-}
-
-PlayFinishSound:
-  IfExist %pt_FinishSoundFile%
-    SoundPlay %pt_FinishSoundFile%
-return
-
-PlayWarningSound:
-  IfExist %pt_WarningSoundFile%
-    SoundPlay %pt_WarningSoundFile%
-Return
-
 FormatSeconds(NumberOfSeconds)  ; Convert the specified number of seconds to hh:mm:ss format.
 {
   time = 19990101  ; *Midnight* of an arbitrary date.
+
   if (NumberOfSeconds < 0){
     revert := "+"
     NumberOfSeconds := -NumberOfSeconds
   }
-  time += %NumberOfSeconds%, seconds
+
+  time += % Mod(NumberOfSeconds, 3600), seconds
   FormatTime, mmss, %time%, mm:ss
+
+  if (NumberOfSeconds >= 3600) {
+    hour := NumberOfSeconds // 3600
+    mmss := hour ":" mmss
+  }
+
   return revert mmss
 }
 
-GuiClose:
-IniWrite, %lastMonitor%, %pt_IniFile%, main, lastMonitor
-ExitApp
-return
+; Function to convert AHK shortcuts to a readable string
+ReadableShortcut(shortcut) {
+  replacements := { "^": "Ctrl+", "!": "Alt+", "+": "Shift+", "#": "Win+" }
+  readable := ""
+  Loop, Parse, shortcut
+  {
+    char := A_LoopField
+    if (replacements.HasKey(char)){
+      readable .= replacements[char]
+    } else {
+      readable .= char
+    }
+  }
+  return readable
+}
+
+; Checks if a value exists in an array (similar to HasKey)
+; FoundPos := HasVal(Haystack, Needle)
+HasVal(haystack, needle) {
+  for index, value in haystack
+    if (value = needle)
+      return index
+  if !(IsObject(haystack))
+    throw Exception("Bad haystack!", -1, haystack)
+  return 0
+}
