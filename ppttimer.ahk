@@ -277,7 +277,7 @@ creatMenus(){
     Menu, MainMenu, Add
   }
   if (MonitorCount > 1) {
-    Menu, MonitorMenu, Add, % "在所有显示器显示", toggleShowOnAllMonitors
+    Menu, MonitorMenu, Add, % "在所有显示器显示`t" ReadableShortcut(allMonitorKey), toggleShowOnAllMonitors
     Menu, MonitorMenu, Add, % "移至下个显示器`t" ReadableShortcut(moveKey), moveToNextMonitor
     if (showOnAllMonitors) {
       Menu, MonitorMenu, check, % "在所有显示器显示"
