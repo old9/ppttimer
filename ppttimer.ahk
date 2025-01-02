@@ -6,7 +6,7 @@ DllCall("SetThreadDpiAwarenessContext", "ptr", -4, "ptr")
 global pt_IniFile := A_ScriptDir "\ppttimer.ini"
 global lastProfile, profiles := [], MonitorCount, lastMonitor, manualModeSupressDetection, showOnAllMonitors, isPptTimerOn
 global startKey, stopKey, resetKey, pauseKey, quitKey, moveKey, allMonitorKey
-global opacity, fontface, fontweight, fontsize, textColor, AheadColor, timeoutColor, backgroundColor, bannerWidth, bannerHeight, stopResetsTimer,  pt_Duration, pt_PlayFinishSound, pt_FinishSoundFile, pt_PlayWarningSound, pt_WarningSoundFile, pt_Ahead
+global opacity, fontface, fontweight, fontsize, textColor, AheadColor, timeoutColor, backgroundColor, bannerWidth, bannerHeight, stopResetsTimer,  pt_Duration, pt_Ahead, pt_PlayFinishSound, pt_FinishSoundFile, pt_PlayWarningSound, pt_WarningSoundFile, sendOnTimeout
 global currentIndicator := ""
 
 global Guis := []
@@ -182,6 +182,9 @@ CountDownTimer(){
   if (remaining != pt_Duration - elapsed) {
     remaining := pt_Duration - elapsed
     updateCountDownText()
+  }
+  if (remaining = 0) {
+    sendTimeoutKeys()
   }
 }
 
@@ -439,6 +442,8 @@ loadProfile(idx) {
     InIRead, manualModeSupressDetection, %pt_IniFile%, %ProfileSectionName%, manualModeSupressDetection, %manualModeSupressDetection%
     InIRead, stopResetsTimer, %pt_IniFile%, %ProfileSectionName%, stopResetsTimer, %stopResetsTimer%
 
+    InIRead, sendOnTimeout, %pt_IniFile%, %ProfileSectionName%, sendOnTimeout, %sendOnTimeout%
+
   }
   refreshUI()
   if (idx != lastProfile) {
@@ -479,6 +484,18 @@ loadDefaultProfile(){
   InIRead, manualModeSupressDetection, %pt_IniFile%, Main, manualModeSupressDetection, 1
   InIRead, stopResetsTimer, %pt_IniFile%, Main, stopResetsTimer, 0
 
+  InIRead, sendOnTimeout, %pt_IniFile%, Main, sendOnTimeout, 0
+
+}
+
+sendTimeoutKeys(){
+  if (sendOnTimeout != 0) {
+    Loop, Parse, sendOnTimeout, `,,%A_Space%%A_Tab%
+    {
+      sendInput, %A_LoopField%
+      sleep, 300
+    }
+  }
 }
 
 checkFullscreenWindow(){
