@@ -357,7 +357,7 @@ creatMenus(){
   Menu, Tray, Add, % "开始计时`t" ReadableShortcut(startKey), manuallyStart
   Menu, Tray, Add, % "停止计时`t" ReadableShortcut(stopKey), stopTimer
   Menu, Tray, Add, % "重置计时`t" ReadableShortcut(resetKey), resetTimer
-  Menu, Tray, Add, % "在听/恢复计时`t" ReadableShortcut(pauseKeyy), pauseTimer
+  Menu, Tray, Add, % "暂停/恢复计时`t" ReadableShortcut(pauseKey), pauseTimer
   Menu, Tray, Add
   if (profiles.Length() > 0) {
     Menu, Tray, Add, 计时预设, :ProfilesMenu
