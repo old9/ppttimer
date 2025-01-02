@@ -166,7 +166,7 @@ stopTimer() {
   if (stopResetsTimer) {
     resetTimer()
   } else {
-    currentIndicator := "■"
+    currentIndicator := "■ "
     isPptTimerOn := false
     pauseTime := 0
     SetTimer, CountDownTimer, off
