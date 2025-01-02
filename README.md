@@ -25,10 +25,12 @@
 
 * 开始计时 `F12`
 * 停止计时 `Ctrl + F12`
+* 暂停/恢复计时 `Ctrl + F11`
+* 重置计时器 `Ctrl + Alt + F12`
 * 在所有显示器显示计时器 `Ctrl + Win + A`
 * 将计时器移动到下一个显示器 `Ctrl + Win + M`
 * 载入计时预设 `Ctrl + Win + F1`~`F9`
-* 载入默认设置 `Ctrl + Win + F10`
+* 载入默认计时预设 `Ctrl + Win + F10`
 * 退出程序 `Win + ESC`
  
 系统托盘菜单提供更多功能，也可按下 `Ctrl` 键时右键点击计时器窗口呼出快捷菜单。
@@ -76,6 +78,11 @@ AheadColor=9D1000
 ;超时后的字体颜色
 timeoutColor=FF0000
 
+;手动模式计时时，是否屏蔽自动检测计时功能
+manualModeSupressDetection=1
+
+;计时器停止时是否重置
+stopResetsTimer=0
 
 [Profile_1]
 ; 多组计时
@@ -121,8 +128,6 @@ PlayFinishSound=0
 [Status]
 ; 会保存状态的设定
 
-;手动模式计时，是否屏蔽自动检测计时功能
-manualModeSupressDetection=1
 ;在所有显示器显示
 showOnAllMonitors=0
 ;最后一次显示的显示器
@@ -136,6 +141,10 @@ lastProfile=0
 startKey=F12
 ;停止计时器
 stopKey=^F12
+;暂停计时器
+pauseKey=^F11
+;重置计时器
+resetKey=^!F12
 ;移动到下一个显示器
 moveKey=^#M
 ;切换在所有显示器显示
