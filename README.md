@@ -84,6 +84,10 @@ manualModeSupressDetection=1
 ;计时器停止时是否重置
 stopResetsTimer=0
 
+;计时器停止时是否发送按键，可用于关闭正在演示的程序。0不发送，其他值按逗号分割后顺序发送
+;按键参考 https://www.autohotkey.com/docs/v1/lib/Send.htm
+sendOnTimeout=0
+
 [Profile_1]
 ; 多组计时
 ; 可使用 Profile_N 的方式命名，最多 9 组
@@ -124,6 +128,15 @@ opacity=0
 Duration=72000
 PlayWarningSound=0
 PlayFinishSound=0
+
+[Profile_6]
+name=测试计时结束发送按键
+Duration=5
+Ahead=0
+PlayWarningSound=0
+PlayFinishSound=0
+;ESC 退出，win+d显示桌面
+sendOnTimeout={ESC},#d
 
 [Status]
 ; 会保存状态的设定
