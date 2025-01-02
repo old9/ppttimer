@@ -5,21 +5,26 @@ DllCall("SetThreadDpiAwarenessContext", "ptr", -4, "ptr")
 
 global pt_IniFile := A_ScriptDir "\ppttimer.ini"
 global lastProfile, profiles := [], MonitorCount, lastMonitor, manualModeSupressDetection, showOnAllMonitors, isPptTimerOn
-global startKey, stopKey, quitKey, moveKey, allMonitorKey
-global opacity, fontface, fontweight, fontsize, textColor, AheadColor, timeoutColor, backgroundColor, bannerWidth, bannerHeight, pt_Duration, pt_PlayFinishSound, pt_FinishSoundFile, pt_PlayWarningSound, pt_WarningSoundFile, pt_Ahead
+global startKey, stopKey, resetKey, pauseKey, quitKey, moveKey, allMonitorKey
+global opacity, fontface, fontweight, fontsize, textColor, AheadColor, timeoutColor, backgroundColor, bannerWidth, bannerHeight, stopResetsTimer,  pt_Duration, pt_PlayFinishSound, pt_FinishSoundFile, pt_PlayWarningSound, pt_WarningSoundFile, pt_Ahead
+global currentIndicator := ""
 
 global Guis := []
 global Texts := []
+global Indicators := []
 
 SysGet, MonitorCount, MonitorCount
 Loop, %MonitorCount% {
   Gui, New, +HwndhCountDown
   Gui, -DPIScale +AlwaysOnTop +LastFound +ToolWindow -Caption
   Gui Add, Text, x0 y0 HwndhDurationText
+  Gui Add, Text, x0 y0 HwndhIndicatorText
   GuiControl, +0x200 +center, %hDurationText%
+  GuiControl, +0x200 +center BackgroundTrans, %hIndicatorText%
   Winset, ExStyle, +0x20
   Guis.push(hCountDown)
   Texts.push(hDurationText)
+  Indicators.push(hIndicatorText)
 }
 
 loadSettings()
@@ -45,19 +50,7 @@ manuallyStart:
 if (manualModeSupressDetection) {
   SetTimer, checkFullscreenWindow, off
 }
-Gosub startIt
-return
-
-;restart
-startIt:
-resetTimer()
 startTimer()
-return
-
-stopIt:
-resetTimer()
-SetTimer, checkFullscreenWindow, on
-SetTimer, CountDownTimer, off
 return
 
 quitIt:
@@ -111,31 +104,75 @@ return
 ;;;;;;;;;; FUNCTIONS ;;;;;;;;;;
 
 resetTimer() {
+  global pauseTime
+  isPptTimerOn := false
+  pauseTime := 0
+  currentIndicator := ""
   Loop, %MonitorCount% {
     hCountDown := Guis[A_index]
     hText := Texts[A_index]
-    ; msgbox, % hText
     Gui, %hCountDown%:Default
     Gui, Font, c%textColor%
     Gui, Color, %backgroundColor%
     GuiControl, font, %hText%
     GuiControl,, %hText%, % FormatSeconds(pt_Duration)
   }
+  SetTimer, CountDownTimer, off
+  SetTimer, checkFullscreenWindow, on
+  updateIndicator()
 }
 
 
 startTimer() {
-  global startTime
-  SetTimer CountDownTimer, Off
+  global startTime, pauseTime
+
+  isPptTimerOn := true
+  pauseTime := 0
   startTime := A_TickCount
+  currentIndicator := ""
   Loop, %MonitorCount% {
     hCountDown := Guis[A_index]
     hText := Texts[A_index]
     Gui, %hCountDown%:Default
+    Gui, Font, c%textColor%
+    Gui, Color, %backgroundColor%
+    GuiControl, font, %hText%
     GuiControl,, %hText%, % FormatSeconds(pt_Duration)
   }
+  updateIndicator()
   SetTimer CountDownTimer, 250
-  SetTimer CountDownTimer, on
+}
+
+pauseTimer() {
+  global startTime, pauseTime
+  if (isPptTimerOn) {
+    if (pauseTime != 0) {
+      startTime += A_TickCount - pauseTime
+      SetTimer CountDownTimer, On
+      pauseTime := 0
+      currentIndicator := ""
+    } else {
+      pauseTime := A_TickCount
+      SetTimer CountDownTimer, Off
+      currentIndicator := "❚❚"
+    }
+    updateIndicator()
+  }
+}
+
+stopTimer() {
+  global startTime, pauseTime
+
+  if (stopResetsTimer) {
+    resetTimer()
+  } else {
+    currentIndicator := "■"
+    isPptTimerOn := false
+    pauseTime := 0
+    SetTimer, CountDownTimer, off
+    SetTimer, checkFullscreenWindow, on
+    updateIndicator()
+  }
 }
 
 
@@ -145,6 +182,16 @@ CountDownTimer(){
   if (remaining != pt_Duration - elapsed) {
     remaining := pt_Duration - elapsed
     updateCountDownText()
+  }
+}
+
+updateIndicator() {
+  global pauseTime
+  Loop, %MonitorCount% {
+    hCountDown := Guis[A_index]
+    hIndicatorText := Indicators[A_index]
+    Gui, %hCountDown%:Default
+    GuiControl,, %hIndicatorText%, %currentIndicator%
   }
 }
 
@@ -172,8 +219,8 @@ updateCountDownText(){
     Gui, %hCountDown%:Default
     Gui, Font, c%fg%
     gui, color, %bg%
-    GuiControl,, %hText%, % FormatSeconds(remaining)
     GuiControl, Font, %hText%
+    GuiControl,, %hText%, % FormatSeconds(remaining)
   }
 
   if (remaining = pt_Ahead && pt_PlayWarningSound){
@@ -197,31 +244,41 @@ refreshUI() {
     bannerWidth_scaled := bannerWidth * dpi_scale
     bannerHeight_scaled := bannerHeight * dpi_scale
     fontsize_scaled := fontsize * dpi_scale
+    indicator_fontsize_scaled := 8 * dpi_scale
+    indicator_width_scaled := 22 * dpi_scale
 
     MonitorWidth := MonitorRight - MonitorLeft
     xposition := MonitorLeft + (MonitorWidth - bannerWidth_scaled)
 
     hCountDown := Guis[A_index]
     hText := Texts[A_index]
+    hIndicatorText := Indicators[A_index]
     Gui, %hCountDown%:Default
+
+    GuiControl, Move, %hIndicatorText%, w%indicator_width_scaled%
+    Gui, Font, s%indicator_fontsize_scaled%
+    GuiControl, Font, %hIndicatorText%
+
     GuiControl, Move, %hText%, w%bannerWidth_scaled% h%bannerHeight_scaled%
     Gui, Font, %fontweight% s%fontsize_scaled% c%textColor% textcenter, %fontface%
     GuiControl, Font, %hText%
+
     if (!isPptTimerOn) {
       GuiControl,, %hText%, % FormatSeconds(pt_Duration)
     }
     Gui, Color, %backgroundColor%
-    Winset, transparent, %opacity%, ahk_id %hCountDown%
 
     if (showOnAllMonitors) {
       Gui, Show, x%xposition% y%monitorTop% w%bannerWidth_scaled% h%bannerHeight_scaled%
-      WinShow, % "ahk_id " Guis[A_index]
+      ; WinShow, % "ahk_id " Guis[A_index]
+      Winset, transparent, %opacity%, ahk_id %hCountDown%
     } else {
       if (A_index != lastMonitor) {
         Winhide, % "ahk_id " Guis[A_index]
       } else {
         Gui, Show, x%xposition% y%monitorTop% w%bannerWidth_scaled% h%bannerHeight_scaled%
-        WinShow, % "ahk_id " Guis[A_index]
+        ; WinShow, % "ahk_id " Guis[A_index]
+        Winset, transparent, %opacity%, ahk_id %hCountDown%
       }
     }
   }
@@ -253,15 +310,18 @@ toggleShowOnAllMonitors() {
 
 
 creatMenus(){
-  Loop, 9 {
+  Loop, 10 {
     idx := A_Index - 1
     loadProfile%idx% := Func("loadProfile").Bind(idx)
   }
   Menu, MainMenu, Add, % "开始计时`t" ReadableShortcut(startKey), manuallyStart
-  Menu, MainMenu, Add, % "停止计时`t" ReadableShortcut(stopKey), stopIt
+  Menu, MainMenu, Add, % "停止计时`t" ReadableShortcut(stopKey), stopTimer
+  Menu, MainMenu, Add, % "重置计时`t" ReadableShortcut(resetKey), resetTimer
+  Menu, MainMenu, Add, % "暂停/恢复计时`t" ReadableShortcut(pauseKey), pauseTimer
   Menu, MainMenu, Add
   if (profiles.Length() > 0) {
     Menu, ProfilesMenu, Add, % "默认配置`tCtrl+Win+F10",% loadProfile0, +Radio
+    hotkey, ^#F10, % loadProfile0
     For index, profileid in profiles {
       InIRead, profilename, %pt_IniFile%, Profile_%profileid%, name, 预设 %profileid%
       Menu, ProfilesMenu, Add, % "(&" profileid ") " profilename "`tCtrl+Win+F" profileid, % loadProfile%profileid%, +Radio
@@ -280,8 +340,8 @@ creatMenus(){
     Menu, MonitorMenu, Add, % "在所有显示器显示`t" ReadableShortcut(allMonitorKey), toggleShowOnAllMonitors
     Menu, MonitorMenu, Add, % "移至下个显示器`t" ReadableShortcut(moveKey), moveToNextMonitor
     if (showOnAllMonitors) {
-      Menu, MonitorMenu, check, % "在所有显示器显示"
-      Menu, MonitorMenu, disable, % "移至下个显示器`t" ReadableShortcut(moveKey)
+      Menu, MonitorMenu, check, 1&
+      Menu, MonitorMenu, disable, 2&
     }
     Menu, MainMenu, Add, 多显示器, :MonitorMenu
     Menu, MainMenu, Add
@@ -292,7 +352,9 @@ creatMenus(){
 
   Menu, Tray, NoStandard
   Menu, Tray, Add, % "开始计时`t" ReadableShortcut(startKey), manuallyStart
-  Menu, Tray, Add, % "停止计时`t" ReadableShortcut(stopKey), stopIt
+  Menu, Tray, Add, % "停止计时`t" ReadableShortcut(stopKey), stopTimer
+  Menu, Tray, Add, % "重置计时`t" ReadableShortcut(resetKey), resetTimer
+  Menu, Tray, Add, % "在听/恢复计时`t" ReadableShortcut(pauseKeyy), pauseTimer
   Menu, Tray, Add
   if (profiles.Length() > 0) {
     Menu, Tray, Add, 计时预设, :ProfilesMenu
@@ -307,21 +369,24 @@ creatMenus(){
 }
 
 loadSettings(){
-  InIRead, lastProfile, %pt_IniFile%, status, lastProfile, 0
 
   InIRead, startKey, %pt_IniFile%, shortcuts, startKey, F12
   InIRead, stopKey, %pt_IniFile%, shortcuts, stopKey, ^F12
+  InIRead, resetKey, %pt_IniFile%, shortcuts, resetKey, ^!F12
+  InIRead, pauseKey, %pt_IniFile%, shortcuts, pauseKey, ^F11
   InIRead, quitKey, %pt_IniFile%, shortcuts, quitKey, #ESC
   InIRead, moveKey, %pt_IniFile%, shortcuts, moveKey, ^#M
   InIRead, allMonitorKey, %pt_IniFile%, shortcuts, allMonitorKey, ^#A
 
-  InIRead, lastMonitor, %pt_IniFile%, status, lastMonitor, 1
-  InIRead, manualModeSupressDetection, %pt_IniFile%, status, manualModeSupressDetection, 1
   InIRead, showOnAllMonitors, %pt_IniFile%, status, showOnAllMonitors, 0
+  InIRead, lastMonitor, %pt_IniFile%, status, lastMonitor, 1
+  InIRead, lastProfile, %pt_IniFile%, status, lastProfile, 0
 
   ; Hotkeys
   hotkey, %startKey%, manuallyStart
-  hotkey, %stopKey%, stopIt
+  hotkey, %stopKey%, stopTimer
+  hotkey, %resetKey%, resetTimer
+  hotkey, %pauseKey%, pauseTimer
   hotkey, %quitKey%, quitIt
   hotkey, %moveKey%, moveToNextMonitor
   hotkey, %allMonitorKey%, toggleShowOnAllMonitors
@@ -370,6 +435,10 @@ loadProfile(idx) {
 
     InIRead, pt_PlayFinishSound, %pt_IniFile%, %ProfileSectionName%, PlayFinishSound, %pt_PlayFinishSound%
     InIRead, pt_FinishSoundFile, %pt_IniFile%, %ProfileSectionName%, FinishSoundFile, %pt_FinishSoundFile%
+
+    InIRead, manualModeSupressDetection, %pt_IniFile%, %ProfileSectionName%, manualModeSupressDetection, %manualModeSupressDetection%
+    InIRead, stopResetsTimer, %pt_IniFile%, %ProfileSectionName%, stopResetsTimer, %stopResetsTimer%
+
   }
   refreshUI()
   if (idx != lastProfile) {
@@ -407,20 +476,19 @@ loadDefaultProfile(){
   InIRead, pt_PlayFinishSound, %pt_IniFile%, Main, PlayFinishSound, %True%
   InIRead, pt_FinishSoundFile, %pt_IniFile%, Main, FinishSoundFile, %A_ScriptDir%\applause.mp3
 
+  InIRead, manualModeSupressDetection, %pt_IniFile%, Main, manualModeSupressDetection, 1
+  InIRead, stopResetsTimer, %pt_IniFile%, Main, stopResetsTimer, 0
+
 }
 
 checkFullscreenWindow(){
   if (isAnyFullscreenWindow()) {
     if (!isPptTimerOn) {
-      isPptTimerOn := true
-      resetTimer()
       startTimer()
     }
   } else {
     if (isPptTimerOn) {
-      isPptTimerOn := false
-      resetTimer()
-      SetTimer CountDownTimer, off
+      stopTimer()
     }
   }
 }
