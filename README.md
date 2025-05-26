@@ -65,7 +65,7 @@ backgroundColor=FFFFAA
 ;窗口大小，位置固定在右上角
 width=200
 height=60
-;窗口位置，左上 LT，右上 RT，左下 LB， 右下 RB
+;窗口位置，左上 LT，中上 MT，右上 RT，左下 LB，中下 MB， 右下 RB
 position=RT
 ;窗口距离屏幕边缘距离
 margin=0

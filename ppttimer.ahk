@@ -263,16 +263,22 @@ refreshUI() {
     MonitorWidth := MonitorRight - MonitorLeft
     MonitorHeight := MonitorBottom - MonitorTop
     Switch bannerPosition {
-      Case "LT":
+      Case "LT", "TL":
           xposition := MonitorLeft + bannerMargin_scaled
           yposition := MonitorTop + bannerMargin_scaled
-      Case "RT":
+      Case "RT", "TR":
           xposition := MonitorRight - bannerWidth_scaled - bannerMargin_scaled
           yposition := MonitorTop + bannerMargin_scaled
-      Case "LB":
+      Case "MT", "TM":
+          xposition := MonitorLeft + MonitorWidth / 2 - bannerWidth_scaled / 2
+          yposition := MonitorTop + bannerMargin_scaled
+      Case "LB", "BL":
           xposition := MonitorLeft + bannerMargin_scaled
           yposition := MonitorBottom - bannerHeight_scaled - bannerMargin_scaled
-      Case "RB":
+      Case "MB", "BM":
+          xposition := MonitorLeft + MonitorWidth / 2 - bannerWidth_scaled / 2
+          yposition := MonitorBottom - bannerHeight_scaled - bannerMargin_scaled
+      Case "RB", "BR":
           xposition := MonitorRight - bannerWidth_scaled - bannerMargin_scaled
           yposition := MonitorBottom - bannerHeight_scaled - bannerMargin_scaled
       Default:
