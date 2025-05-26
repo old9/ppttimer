@@ -3,7 +3,6 @@
 ;@Ahk2Exe-SetProductName ppttimer
 ;@Ahk2Exe-SetVersion 0.6
 
-DllCall("SetThreadDpiAwarenessContext", "ptr", -4, "ptr")
 
 global pt_IniFile := A_ScriptDir "\ppttimer.ini"
 global lastProfile, profiles := [], MonitorCount, lastMonitor, manualModeSupressDetection, showOnAllMonitors, isPptTimerOn
@@ -17,6 +16,7 @@ global Indicators := []
 global defaultFont := GuiDefaultFont()
 SysGet, MonitorCount, MonitorCount
 Loop, %MonitorCount% {
+  DllCall("SetThreadDpiAwarenessContext", "ptr", -4, "ptr")
   Gui, New, +HwndhCountDown
   Gui, -DPIScale +AlwaysOnTop +LastFound +ToolWindow -Caption
   Gui Add, Text, x0 y0 HwndhDurationText
@@ -243,6 +243,7 @@ refreshUI() {
   }
 
   Loop, %MonitorCount% {
+    DllCall("SetThreadDpiAwarenessContext", "ptr", -4, "ptr")
     SysGet, Monitor, Monitor, %A_index%
     dpi_scale := GetDpiForMonitor(EnumMonitors()[A_index]) / 96
 
