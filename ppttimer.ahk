@@ -1,7 +1,7 @@
 #Persistent
 #SingleInstance force
 ;@Ahk2Exe-SetProductName ppttimer
-;@Ahk2Exe-SetVersion 0.6
+;@Ahk2Exe-SetVersion 0.7
 
 
 global pt_IniFile := A_ScriptDir "\ppttimer.ini"
