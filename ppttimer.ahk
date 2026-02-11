@@ -3,7 +3,6 @@
 ;@Ahk2Exe-SetProductName ppttimer
 ;@Ahk2Exe-SetVersion 0.7
 
-
 global pt_IniFile := A_ScriptDir "\ppttimer.ini"
 global lastProfile, profiles := [], MonitorCount, lastMonitor, manualModeSupressDetection, showOnAllMonitors, isPptTimerOn
 global startKey, stopKey, resetKey, pauseKey, quitKey, moveKey, allMonitorKey
@@ -40,47 +39,40 @@ SetTimer, checkFullscreenWindow, 250
 
 return
 
-
-
-
-
-
 ;;;;;;;;;; SUBRUTINES ;;;;;;;;;;
 
 ;start manually
 manuallyStart:
-if (manualModeSupressDetection) {
-  SetTimer, checkFullscreenWindow, off
-}
-startTimer()
+  if (manualModeSupressDetection) {
+    SetTimer, checkFullscreenWindow, off
+  }
+  startTimer()
 return
 
 quitIt:
 ExitApp
 return
 
-
 ; Add these hotkeys after the other hotkey definitions
 ~Ctrl::
-Loop, %MonitorCount% {
-  WinSet, ExStyle, -0x20, % "ahk_id " Guis[A_index]  ; Disable click-through when Ctrl is pressed
-}
+  Loop, %MonitorCount% {
+    WinSet, ExStyle, -0x20, % "ahk_id " Guis[A_index]  ; Disable click-through when Ctrl is pressed
+  }
 return
 
 ~Ctrl up::
-Loop, %MonitorCount% {
-  WinSet, ExStyle, +0x20, % "ahk_id " Guis[A_index]  ; Re-enable click-through when Ctrl is released
-}
+  Loop, %MonitorCount% {
+    WinSet, ExStyle, +0x20, % "ahk_id " Guis[A_index]  ; Re-enable click-through when Ctrl is released
+  }
 return
 
 ; Modify the GuiContextMenu section to use the shared menu
 GuiContextMenu:
-Menu, MainMenu, Show, %A_GuiX%, %A_GuiY%
-Loop, %MonitorCount% {
-  WinSet, ExStyle, +0x20, % "ahk_id " Guis[A_index]
-}
+  Menu, MainMenu, Show, %A_GuiX%, %A_GuiY%
+  Loop, %MonitorCount% {
+    WinSet, ExStyle, +0x20, % "ahk_id " Guis[A_index]
+  }
 return
-
 
 PlayFinishSound:
   IfExist %pt_FinishSoundFile%
@@ -92,16 +84,9 @@ PlayWarningSound:
     SoundPlay %pt_WarningSoundFile%
 Return
 
-
 GuiClose:
 ExitApp
 return
-
-
-
-
-
-
 
 ;;;;;;;;;; FUNCTIONS ;;;;;;;;;;
 
@@ -124,10 +109,8 @@ resetTimer() {
   updateIndicator()
 }
 
-
 startTimer() {
   global startTime, pauseTime
-
   isPptTimerOn := true
   pauseTime := 0
   startTime := A_TickCount
@@ -163,6 +146,7 @@ pauseTimer() {
 }
 
 stopTimer() {
+
   global startTime, pauseTime
 
   if (stopResetsTimer) {
@@ -176,7 +160,6 @@ stopTimer() {
     updateIndicator()
   }
 }
-
 
 CountDownTimer(){
   global startTime, remaining
@@ -263,27 +246,27 @@ refreshUI() {
     MonitorWidth := MonitorRight - MonitorLeft
     MonitorHeight := MonitorBottom - MonitorTop
     Switch bannerPosition {
-      Case "LT", "TL":
-          xposition := MonitorLeft + bannerMargin_scaled
-          yposition := MonitorTop + bannerMargin_scaled
-      Case "RT", "TR":
-          xposition := MonitorRight - bannerWidth_scaled - bannerMargin_scaled
-          yposition := MonitorTop + bannerMargin_scaled
-      Case "MT", "TM":
-          xposition := MonitorLeft + MonitorWidth / 2 - bannerWidth_scaled / 2
-          yposition := MonitorTop + bannerMargin_scaled
-      Case "LB", "BL":
-          xposition := MonitorLeft + bannerMargin_scaled
-          yposition := MonitorBottom - bannerHeight_scaled - bannerMargin_scaled
-      Case "MB", "BM":
-          xposition := MonitorLeft + MonitorWidth / 2 - bannerWidth_scaled / 2
-          yposition := MonitorBottom - bannerHeight_scaled - bannerMargin_scaled
-      Case "RB", "BR":
-          xposition := MonitorRight - bannerWidth_scaled - bannerMargin_scaled
-          yposition := MonitorBottom - bannerHeight_scaled - bannerMargin_scaled
-      Default:
-          xposition := MonitorRight - bannerWidth_scaled - bannerMargin_scaled
-          yposition := MonitorTop + bannerMargin_scaled
+    Case "LT", "TL":
+      xposition := MonitorLeft + bannerMargin_scaled
+      yposition := MonitorTop + bannerMargin_scaled
+    Case "RT", "TR":
+      xposition := MonitorRight - bannerWidth_scaled - bannerMargin_scaled
+      yposition := MonitorTop + bannerMargin_scaled
+    Case "MT", "TM":
+      xposition := MonitorLeft + MonitorWidth / 2 - bannerWidth_scaled / 2
+      yposition := MonitorTop + bannerMargin_scaled
+    Case "LB", "BL":
+      xposition := MonitorLeft + bannerMargin_scaled
+      yposition := MonitorBottom - bannerHeight_scaled - bannerMargin_scaled
+    Case "MB", "BM":
+      xposition := MonitorLeft + MonitorWidth / 2 - bannerWidth_scaled / 2
+      yposition := MonitorBottom - bannerHeight_scaled - bannerMargin_scaled
+    Case "RB", "BR":
+      xposition := MonitorRight - bannerWidth_scaled - bannerMargin_scaled
+      yposition := MonitorBottom - bannerHeight_scaled - bannerMargin_scaled
+    Default:
+      xposition := MonitorRight - bannerWidth_scaled - bannerMargin_scaled
+      yposition := MonitorTop + bannerMargin_scaled
     }
     hCountDown := Guis[A_index]
     hText := Texts[A_index]
@@ -346,7 +329,6 @@ toggleShowOnAllMonitors() {
   IniWrite, %showOnAllMonitors%, %pt_IniFile%, status, showOnAllMonitors
 }
 
-
 creatMenus(){
   Loop, 10 {
     idx := A_Index - 1
@@ -386,7 +368,6 @@ creatMenus(){
   }
 
   Menu, MainMenu, Add, % "退出`t" ReadableShortcut(quitKey), quitIt
-
 
   Menu, Tray, NoStandard
   Menu, Tray, Add, % "开始计时`t" ReadableShortcut(startKey), manuallyStart
@@ -525,7 +506,6 @@ loadDefaultProfile(){
   InIRead, bannerPosition, %pt_IniFile%, Main, position, RT
   InIRead, bannerMargin, %pt_IniFile%, Main, margin, 0
 
-
   InIRead, pt_Duration, %pt_IniFile%, Main, Duration, 300
   InIRead, pt_Ahead, %pt_IniFile%, Main, Ahead, 120
 
@@ -660,31 +640,31 @@ HasVal(haystack, needle) {
 }
 
 EnumMonitors() {
-   static EnumProc := RegisterCallback("MonitorEnumProc")
-   Monitors := []
-   return DllCall("User32\EnumDisplayMonitors", "Ptr", 0, "Ptr", 0, "Ptr", EnumProc, "Ptr", &Monitors, "Int") ? Monitors : false
+  static EnumProc := RegisterCallback("MonitorEnumProc")
+  Monitors := []
+  return DllCall("User32\EnumDisplayMonitors", "Ptr", 0, "Ptr", 0, "Ptr", EnumProc, "Ptr", &Monitors, "Int") ? Monitors : false
 }
 
 MonitorEnumProc(hMonitor, hDC, pRECT, ObjectAddr) {
-   Monitors := Object(ObjectAddr)
-   Monitors.Push(hMonitor)
-   return true
+  Monitors := Object(ObjectAddr)
+  Monitors.Push(hMonitor)
+  return true
 }
 GetDpiForMonitor(hMonitor, Monitor_Dpi_Type := 0) {  ; MDT_EFFECTIVE_DPI = 0 (shellscalingapi.h)
-   if !DllCall("Shcore\GetDpiForMonitor", "Ptr", hMonitor, "UInt", Monitor_Dpi_Type, "UInt*", dpiX, "UInt*", dpiY, "UInt")
-      ; return {x:dpiX, y:dpiY}
-      return dpiX
+  if !DllCall("Shcore\GetDpiForMonitor", "Ptr", hMonitor, "UInt", Monitor_Dpi_Type, "UInt*", dpiX, "UInt*", dpiY, "UInt")
+    ; return {x:dpiX, y:dpiY}
+    return dpiX
 }
 GetDpiForWindow(hwnd) {
-   return DllCall("User32\GetDpiForWindow", "Ptr", hwnd, "UInt")
+  return DllCall("User32\GetDpiForWindow", "Ptr", hwnd, "UInt")
 }
 
 GuiDefaultFont() {
-   VarSetCapacity(LF, szLF := 28 + (A_IsUnicode ? 64 : 32), 0) ; LOGFONT structure
-   If DllCall("GetObject", "Ptr", DllCall("GetStockObject", "Int", 17, "Ptr"), "Int", szLF, "Ptr", &LF)
-      Return {Name: StrGet(&LF + 28, 32), Size: Round(Abs(NumGet(LF, 0, "Int")) * (72 / A_ScreenDPI), 1)
-            , Weight: NumGet(LF, 16, "Int"), Quality: NumGet(LF, 26, "UChar")}
-   Return False
+  VarSetCapacity(LF, szLF := 28 + (A_IsUnicode ? 64 : 32), 0) ; LOGFONT structure
+  If DllCall("GetObject", "Ptr", DllCall("GetStockObject", "Int", 17, "Ptr"), "Int", szLF, "Ptr", &LF)
+    Return {Name: StrGet(&LF + 28, 32), Size: Round(Abs(NumGet(LF, 0, "Int")) * (72 / A_ScreenDPI), 1)
+      , Weight: NumGet(LF, 16, "Int"), Quality: NumGet(LF, 26, "UChar")}
+  Return False
 }
 
 validNumberOrDefault(valueToCheck, defaultValue)
@@ -693,7 +673,7 @@ validNumberOrDefault(valueToCheck, defaultValue)
     return defaultValue
 
   if (valueToCheck < 0) {
-     return defaultValue
+    return defaultValue
   }
   return valueToCheck
 }
