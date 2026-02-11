@@ -7,7 +7,15 @@ global pt_IniFile := A_ScriptDir "\ppttimer.ini"
 global lastProfile, profiles := [], MonitorCount, lastMonitor, manualModeSupressDetection, showOnAllMonitors, isPptTimerOn
 global startKey, stopKey, resetKey, pauseKey, quitKey, moveKey, allMonitorKey
 global opacity, fontface, fontweight, fontsize, indicator_fontsize := 12, textColor, AheadColor, timeoutColor, backgroundColor, bannerWidth, bannerHeight, bannerPosition, bannerMargin, stopResetsTimer,  pt_Duration, pt_Ahead, pt_PlayFinishSound, pt_FinishSoundFile, pt_PlayWarningSound, pt_WarningSoundFile, sendOnTimeout
-global currentIndicator := ""
+global currentIndicator := "", currentFullscreenWinID
+; Debug settings
+global pt_DebugLevel := 0
+global pt_DebugLogFile := ""
+
+FormatTime(time, format := "yyyy-MM-dd HH:mm:ss") {
+  FormatTime, formatted, %time%, %format%
+  return formatted
+}
 
 global Guis := []
 global Texts := []
@@ -389,6 +397,13 @@ creatMenus(){
 
 loadSettings(){
 
+  InIRead, debugLevel, %pt_IniFile%, Main, debugLevel, 0
+  pt_DebugLevel := validNumberOrDefault(debugLevel, 0)
+  ; Initialize debug log file
+  if (pt_DebugLevel > 0) {
+    pt_DebugLogFile := A_ScriptDir "\ppttimer_debug.log"
+  }
+
   InIRead, startKey, %pt_IniFile%, shortcuts, startKey, F12
   InIRead, stopKey, %pt_IniFile%, shortcuts, stopKey, ^F12
   InIRead, resetKey, %pt_IniFile%, shortcuts, resetKey, ^!F12
@@ -491,6 +506,14 @@ loadProfile(idx) {
 }
 
 loadDefaultProfile(){
+  InIRead, debugLevel, %pt_IniFile%, Main, debugLevel, 0
+  pt_DebugLevel := validNumberOrDefault(debugLevel, 0)
+
+  ; Initialize debug log file
+  if (pt_DebugLevel > 0) {
+    pt_DebugLogFile := A_ScriptDir "\ppttimer_debug.log"
+  }
+
   InIRead, fontface, %pt_IniFile%, Main, fontface, Microsoft Yahei
   InIRead, fontweight, %pt_IniFile%, Main, fontweight, bold
   InIRead, fontsize, %pt_IniFile%, Main, fontsize, 36
@@ -546,6 +569,7 @@ checkFullscreenWindow(){
 
 
 isAnyFullscreenWindow() {
+  global currentFullscreenWinID
   ; Get the number of monitors
   SysGet, MonitorCount, MonitorCount
 
@@ -557,7 +581,8 @@ isAnyFullscreenWindow() {
     ; Get window style and position
     WinGet, winStyle, Style, ahk_id %winID%
     WinGetPos, winX, winY, winWidth, winHeight, ahk_id %winID%
-
+    ; get process path for logging
+    WinGet, winProcessPath, ProcessPath, ahk_id %winID%
     ; Check if the window is visible
     WinGet, winState, MinMax, ahk_id %winID%
     if (winState = -1) ; Skip invisible windows
@@ -585,10 +610,15 @@ isAnyFullscreenWindow() {
       isFullscreen := isFullscreen && (winWidth = monitorWidth && winHeight = monitorHeight) ; Covers the monitor
 
       if (isFullscreen) {
+        if (currentFullscreenWinID != winID) {
+          currentFullscreenWinID := winID
+          logMessage("New fullscreen window detected: Class=" winClass ", Title=" winTitle ", Executable=" winProcessPath , 2)
+        }
         return true ; A fullscreen window is found
       }
     }
   }
+  currentFullscreenWinID := "" ; Reset if no fullscreen window is found
   return false ; No fullscreen window found
 }
 
@@ -676,4 +706,14 @@ validNumberOrDefault(valueToCheck, defaultValue)
     return defaultValue
   }
   return valueToCheck
+}
+
+logMessage(message, level := 1) {
+  global pt_DebugLevel, pt_DebugLogFile
+  pt_DebugLogFile := A_ScriptDir "\ppttimer_debug.log"
+  if (pt_DebugLevel >= level) {
+    timestamp := FormatTime(A_Now, "yyyy-MM-dd HH:mm:ss")
+    logLine := "[" timestamp "] " message
+    FileAppend, % logLine "`n", %pt_DebugLogFile%, UTF-8
+  }
 }

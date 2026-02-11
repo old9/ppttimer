@@ -91,6 +91,9 @@ stopResetsTimer=0
 ;按键参考 https://www.autohotkey.com/docs/v1/lib/Send.htm
 sendOnTimeout=0
 
+; log级别，0不输出日志，1输出错误日志，2输出调试日志，默认为0
+; debugLevel=2
+
 [Profile_1]
 ; 多组计时
 ; 可使用 Profile_N 的方式命名，最多 9 组
