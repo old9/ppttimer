@@ -8,6 +8,8 @@ global lastProfile, profiles := [], MonitorCount, lastMonitor, manualModeSupress
 global startKey, stopKey, resetKey, pauseKey, quitKey, moveKey, allMonitorKey
 global opacity, fontface, fontweight, fontsize, indicator_fontsize := 12, textColor, AheadColor, timeoutColor, backgroundColor, bannerWidth, bannerHeight, bannerPosition, bannerMargin, stopResetsTimer,  pt_Duration, pt_Ahead, pt_PlayFinishSound, pt_FinishSoundFile, pt_PlayWarningSound, pt_WarningSoundFile, sendOnTimeout
 global currentIndicator := "", currentFullscreenWinID
+global exclusionExeList, exclusionClassList, exclusionTitleList
+
 ; Debug settings
 global pt_DebugLevel := 0
 global pt_DebugLogFile := ""
@@ -416,6 +418,10 @@ loadSettings(){
   InIRead, lastMonitor, %pt_IniFile%, status, lastMonitor, 1
   InIRead, lastProfile, %pt_IniFile%, status, lastProfile, 0
 
+  InIRead, exclusionExeList, %pt_IniFile%, Main, exclusionExeList, %A_Space%
+  InIRead, exclusionClassList, %pt_IniFile%, Main, exclusionClassList, %A_Space%
+  InIRead, exclusionTitleList, %pt_IniFile%, Main, exclusionTitleList, %A_Space%
+
   ; Hotkeys
   hotkey, %startKey%, manuallyStart
   hotkey, %stopKey%, stopTimer
@@ -567,6 +573,43 @@ checkFullscreenWindow(){
   }
 }
 
+; function to check if a window is excluded from timer
+isExcludedWindow(winExe, winClass, winTitle){
+  ; test against global exclusion list
+  excluded := false
+  if (exclusionExeList) {
+    Loop, parse, exclusionExeList, `,,%A_Space%%A_Tab%
+    {
+      ; case insensitive by default when using `=
+      if (winExe = A_LoopField) {
+        excluded := true
+        break
+      }
+    }
+  }
+
+  if (!excluded && exclusionClassLis) {
+    Loop, parse, exclusionClassList, `,,%A_Space%%A_Tab%
+    {
+      if (winClass = A_LoopField) {
+        excluded := true
+        break
+      }
+    }
+  }
+
+  if (exclusionTitleList) {
+    Loop, parse, exclusionTitleList, `,,%A_Space%%A_Tab%
+    {
+
+      if (winTitle = A_LoopField) {
+        excluded := true
+        break
+      }
+    }
+  }
+  return excluded
+}
 
 isAnyFullscreenWindow() {
   global currentFullscreenWinID
@@ -583,6 +626,8 @@ isAnyFullscreenWindow() {
     WinGetPos, winX, winY, winWidth, winHeight, ahk_id %winID%
     ; get process path for logging
     WinGet, winProcessPath, ProcessPath, ahk_id %winID%
+    ; get ProcessName for detection
+    WinGet, winProcessName, ProcessName, ahk_id %winID%
     ; Check if the window is visible
     WinGet, winState, MinMax, ahk_id %winID%
     if (winState = -1) ; Skip invisible windows
@@ -593,7 +638,8 @@ isAnyFullscreenWindow() {
       continue
     if (winTitle = "") ; Exclude windows with no title (often background/system windows)
       continue
-
+    if (isExcludedWindow(winProcessName, winClass, winTitle)) ; Exclude windows based on exclusion lists
+      continue
     ; Loop through all monitors to check for fullscreen
     Loop, %MonitorCount%
     {
