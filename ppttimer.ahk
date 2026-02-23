@@ -588,7 +588,7 @@ isExcludedWindow(winExe, winClass, winTitle){
     }
   }
 
-  if (!excluded && exclusionClassLis) {
+  if (!excluded && exclusionClassList) {
     Loop, parse, exclusionClassList, `,,%A_Space%%A_Tab%
     {
       if (winClass = A_LoopField) {
