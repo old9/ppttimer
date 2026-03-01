@@ -1,13 +1,14 @@
 #Persistent
 #SingleInstance force
 ;@Ahk2Exe-SetProductName ppttimer
-;@Ahk2Exe-SetVersion 0.8
+;@Ahk2Exe-SetVersion 0.9
 
 global pt_IniFile := A_ScriptDir "\ppttimer.ini"
 global lastProfile, profiles := [], MonitorCount, lastMonitor, manualModeSupressDetection, showOnAllMonitors, isPptTimerOn
 global startKey, stopKey, resetKey, pauseKey, quitKey, moveKey, allMonitorKey
 global opacity, fontface, fontweight, fontsize, indicator_fontsize := 12, textColor, AheadColor, timeoutColor, backgroundColor, bannerWidth, bannerHeight, bannerPosition, bannerMargin, stopResetsTimer,  pt_Duration, pt_Ahead, pt_PlayFinishSound, pt_FinishSoundFile, pt_PlayWarningSound, pt_WarningSoundFile, sendOnTimeout
 global currentIndicator := "", currentFullscreenWinID
+global timeoutTriggered := false
 global exclusionExeList, exclusionClassList, exclusionTitleList
 
 ; Debug settings
@@ -104,6 +105,7 @@ resetTimer() {
   global pauseTime
   isPptTimerOn := false
   pauseTime := 0
+  timeoutTriggered := false
   currentIndicator := ""
   Loop, %MonitorCount% {
     hCountDown := Guis[A_index]
@@ -124,6 +126,7 @@ startTimer() {
   isPptTimerOn := true
   pauseTime := 0
   startTime := A_TickCount
+  timeoutTriggered := false
   currentIndicator := ""
   Loop, %MonitorCount% {
     hCountDown := Guis[A_index]
@@ -172,14 +175,18 @@ stopTimer() {
 }
 
 CountDownTimer(){
-  global startTime, remaining
+  global startTime, remaining, timeoutTriggered
   elapsed := (A_TickCount - startTime) // 1000
-  if (remaining != pt_Duration - elapsed) {
-    remaining := pt_Duration - elapsed
+  newRemaining := pt_Duration - elapsed
+  if (remaining != newRemaining) {
+    prevRemaining := remaining
+    remaining := newRemaining
     updateCountDownText()
-  }
-  if (remaining = 0) {
-    sendTimeoutKeys()
+
+    if (prevRemaining > 0 && remaining <= 0 && !timeoutTriggered) {
+      timeoutTriggered := true
+      sendTimeoutKeys()
+    }
   }
 }
 
